@@ -60,11 +60,8 @@ const getRoute = () =>
   window.location.hash.replace(/^#\/?/, "").split("?")[0] || "overview";
 const navItems = [
   { name: "Overview", path: "overview", icon: LayoutDashboard },
-  { name: "Events", path: "events", icon: CalendarDays },
-  { name: "Participants", path: "participants", icon: Users },
-  { name: "Check-in", path: "check-in", icon: ScanLine },
-  { name: "Staff", path: "staff", icon: UserRoundCheck },
-  { name: "Settings", path: "settings", icon: Settings },
+  { name: "All Events", path: "events", icon: CalendarDays },
+  { name: "Create Event", path: "create", icon: Sparkles },
 ];
 export default function App() {
   const store = useDemoStore();
@@ -328,7 +325,7 @@ export default function App() {
                 {page === "event" && (
                   <>
                     <ChevronRight size={13} />
-                    <span className="breadcrumb-event">Event details</span>
+                    <span className="breadcrumb-event">{event?.title}</span>
                   </>
                 )}
               </div>

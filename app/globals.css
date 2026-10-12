@@ -27,14 +27,14 @@
 }
 :root {
   color-scheme: light;
-  --background: #f8fafc;
-  --foreground: #20232e;
-  --primary: #5546df;
-  --primary-foreground: #fff;
-  --secondary: #f0eefc;
-  --muted: #f4f5f8;
-  --muted-foreground: #7b8190;
-  --accent: #f0eefb;
+  --background: #f6f2ea;
+  --foreground: #252326;
+  --primary: #ef7959;
+  --primary-foreground: #252326;
+  --secondary: #e8def5;
+  --muted: #ede8df;
+  --muted-foreground: #706a63;
+  --accent: #e7dfef;
   --destructive: #c74343;
   --border: #e8e9ef;
   --radius: 10px;

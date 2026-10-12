@@ -1,0 +1,14 @@
+import { ArrowUpRight, ArrowRight, CalendarDays, Users } from 'lucide-react';
+import { type Event, type Participant, counts, formatDate, formatTime } from '../demo-store';
+import { Status } from './shared';
+export const demoToday = '2026-10-12';
+export const isUpcoming = (e: Event) => e.date >= demoToday && e.status !== 'Cancelled' && e.status !== 'Completed';
+export function EventArtwork({event}: {event: Event}) {
+ const image = event.id === 'design' ? '/images/creative-gathering.png' : ['founders','summer'].includes(event.id) ? '/images/community-table.png' : undefined;
+ return <div className={`event-art art-${event.id}`} aria-hidden="true">{image ? <img src={image} alt=""/> : <><span className="poster-orbit"/><span className="poster-type">{event.category === 'Meetup' ? <>good people.<br/>great ideas.</> : event.category === 'Workshop' ? <>MAKE<br/>SOMETHING.</> : <>Together<br/>is better.</>}</span><span className="poster-foot">{event.category.toUpperCase()} / 2026</span></>}</div>;
+}
+export function EventCard({event,people,onOpen,featured=false}: {event:Event;people:Participant[];onOpen:(id:string)=>void;featured?:boolean}) {
+ const c=counts(event,people);
+ return <button className={`editorial-card ${featured?'featured-card':''}`} onClick={()=>onOpen(event.id)} aria-label={`Manage ${event.title}`}><div className="card-art-wrap"><EventArtwork event={event}/><span className="card-category">{event.category}</span><span className="card-open"><ArrowUpRight size={20}/></span></div><div className="editorial-card-body"><div className="card-date"><CalendarDays size={14}/>{formatDate(event.date,true)} · {formatTime(event.time)}</div><h3>{event.title}</h3>{featured&&<p className="featured-description">{event.description}</p>}<div className="card-status"><Status value={event.status}/>{c.waiting>0&&<span>{c.waiting} on waiting list</span>}</div><div className="card-capacity"><span><Users size={14}/><strong>{c.confirmed}</strong> / {event.capacity} registered</span><strong>{Math.round(c.confirmed/event.capacity*100)}%</strong></div><div className="capacity-track"><span style={{width:`${Math.min(c.confirmed/event.capacity*100,100)}%`}}/></div><div className="card-manage">Manage event <ArrowRight size={16}/></div></div></button>
+}
+export function OrganizationStats({events,people}:{events:Event[];people:Participant[]}){const values=[events.length,events.filter(isUpcoming).length,people.filter(p=>p.status==='Confirmed').length,people.filter(p=>p.checkedIn).length];return <div className="organization-stats">{['Total events','Upcoming events','Confirmed participants','Checked in'].map((label,i)=><div key={label}><span>{label}</span><strong>{values[i].toLocaleString()}<span className="stat-spark">{['↗','↗','+','✓'][i]}</span></strong><small>{i===1?'On your calendar':'Across all your events'}</small></div>)}</div>}

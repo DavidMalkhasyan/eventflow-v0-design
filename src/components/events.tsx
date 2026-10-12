@@ -51,6 +51,9 @@ export async function copyText(text: string) {
     );
   }
 }
+import { EventArtwork, EventCard, isUpcoming } from './event-cards';
+import { LayoutGrid, List, ArrowUpRight } from 'lucide-react';
+import { CheckIn } from './check-in';
 export function Events({
   store,
   navigate,
@@ -58,52 +61,12 @@ export function Events({
   store: Store;
   navigate: (path: string) => void;
 }) {
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("All events");
-  const filtered = store.events.filter(
-    (e) =>
-      e.title.toLowerCase().includes(search.toLowerCase()) &&
-      (filter === "All events" || e.status === filter),
-  );
-  return (
-    <>
-      <PageHeader
-        title="A place for every gathering."
-        description="Create, organize, and keep every detail in flow."
-        action={
-          <Button size="lg" onClick={() => navigate("create")}>
-            <Plus />
-            Create event
-          </Button>
-        }
-      />
-      <div className="panel">
-        <div className="table-toolbar">
-          <div className="filter-tabs">
-            {["All events", "Published", "Draft", "Completed", "Cancelled"].map(
-              (s) => (
-                <button
-                  key={s}
-                  className={filter === s ? "active" : ""}
-                  onClick={() => setFilter(s)}
-                >
-                  {s}
-                  {s === "All events" && <span>{store.events.length}</span>}
-                </button>
-              ),
-            )}
-          </div>
-          <SearchBox value={search} onChange={setSearch} />
-        </div>
-        <EventTable
-          events={filtered}
-          people={store.participants}
-          onOpen={(id) => navigate(`event/${id}`)}
-        />
-        <div className="table-footer">{filtered.length} events</div>
-      </div>
-    </>
-  );
+  const [search,setSearch]=useState('');
+  const [filter,setFilter]=useState('All events');
+  const [view,setView]=useState('grid');
+  const [sort,setSort]=useState('ascending');
+  const filtered=store.events.filter(e=>e.title.toLowerCase().includes(search.toLowerCase())&&(filter==='All events'||(filter==='Upcoming'?isUpcoming(e):filter==='Past'?e.status==='Completed':e.status===filter))).sort((a,b)=>(sort==='ascending'?1:-1)*a.date.localeCompare(b.date));
+  return <><PageHeader eyebrow="ALL YOUR IDEAS, IN ONE PLACE" title="Made for bringing people together." description="Big conferences. Small gatherings. Every event has a home here." action={<Button size="lg" onClick={()=>navigate('create')}><Plus/>Create event</Button>}/><div className="gallery-tools"><SearchBox value={search} onChange={setSearch}/><div className="toolbar-actions"><select aria-label="Sort events" value={sort} onChange={e=>setSort(e.target.value)}><option value="ascending">Date: earliest first</option><option value="descending">Date: latest first</option></select><div className="view-toggle" role="group" aria-label="Event view"><button aria-label="Grid view" aria-pressed={view==='grid'} onClick={()=>setView('grid')}><LayoutGrid size={18}/></button><button aria-label="List view" aria-pressed={view==='list'} onClick={()=>setView('list')}><List size={18}/></button></div></div></div><div className="editorial-filters">{['All events','Upcoming','Past','Draft','Cancelled'].map(f=><button key={f} className={filter===f?'selected':''} aria-pressed={filter===f} onClick={()=>setFilter(f)}>{f}{filter===f&&<span>{filtered.length}</span>}</button>)}</div>{view==='grid'?<div className="event-gallery">{filtered.map(e=><EventCard key={e.id} event={e} people={store.participants} onOpen={id=>navigate(`event/${id}`)}/>)}</div>:<div className="panel"><EventTable events={filtered} people={store.participants} onOpen={id=>navigate(`event/${id}`)}/></div>}{view==='grid'&&!filtered.length&&<Empty title="Nothing here just yet." text="Try another search or bring a new event to life."/>}<p className="gallery-footer">{filtered.length} events · Demo workspace</p></>;
 }
 export function EventForm({
   store,
@@ -273,13 +236,15 @@ export function Participants({
   store,
   event,
   embedded = false,
+  initialFilter = 'All participants',
 }: {
   store: Store;
   event?: Event;
   embedded?: boolean;
+  initialFilter?: string;
 }) {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("All participants");
+  const [filter, setFilter] = useState(initialFilter);
   const [remove, setRemove] = useState<Participant | null>(null);
   const [page, setPage] = useState(0);
   const people = store.participants.filter(
@@ -507,7 +472,7 @@ export function EventDetails({
   store: Store;
   navigate: (p: string) => void;
 }) {
-  const [tab, setTab] = useState("Participants");
+  const [tab, setTab] = useState("Overview");
   const [action, setAction] = useState("");
   const [reauth, setReauth] = useState(false);
   const c = counts(event, store.participants);
@@ -518,7 +483,9 @@ export function EventDetails({
         <ArrowLeft size={16} />
         All events
       </button>
+      <div className="workspace-event-cover"><EventArtwork event={event}/><span className="cover-caption">{event.category} / {formatDate(event.date)}</span></div>
       <PageHeader
+        eyebrow="YOUR EVENT WORKSPACE"
         title={event.title}
         description={`${formatDate(event.date)} · ${formatTime(event.time)} · ${event.timezone}`}
         action={
@@ -581,7 +548,7 @@ export function EventDetails({
       </div>
       <section className="panel">
         <div className="detail-tabs">
-          {["Participants", "Staff", "Activity", "Settings"].map((t) => (
+          {["Overview", "Participants", "Waiting List", "Check-in", "Staff", "Event Settings"].map((t) => (
             <button
               className={tab === t ? "active" : ""}
               key={t}
@@ -592,6 +559,9 @@ export function EventDetails({
             </button>
           ))}
         </div>
+        {tab === 'Overview' && <div className="event-overview-content"><div><span className="eyebrow">THE GATHERING</span><h2>A little more about your event.</h2><p>{event.description}</p><Button variant="outline" onClick={()=>navigate(`edit/${event.id}`)}>Edit event details <Pencil/></Button></div><aside><span className="eyebrow">REGISTRATION AT A GLANCE</span><h3>{c.confirmed} people. One great gathering.</h3><p>{c.waiting} on the waiting list · {c.checked} checked in</p><button className="text-action" onClick={()=>setTab('Participants')}>Meet your participants <ArrowUpRight size={16}/></button></aside></div>}
+        {tab === 'Waiting List' && <Participants key="waiting" store={store} event={event} embedded initialFilter="Waiting list"/>}
+        {tab === 'Check-in' && <CheckIn store={store} event={event} navigate={navigate}/>}
         {tab === "Participants" && (
           <Participants store={store} event={event} embedded />
         )}
@@ -603,7 +573,7 @@ export function EventDetails({
             items={store.activity.filter((a) => a.detail === event.title)}
           />
         )}
-        {tab === "Settings" && (
+        {tab === "Event Settings" && (
           <div className="settings-content">
             <h3>Event settings</h3>
             <p>{event.description}</p>
